@@ -10,7 +10,7 @@ var request = require("request");
 
 // The authentication key (API Key).
 // Get your own by registering at https://app.pdf.co
-const API_KEY = "***********************************";
+const API_KEY = process.env.API_KEY; // "***********************************";
 
 // Source PDF file
 const SourceFile = "./sample.pdf";
@@ -60,7 +60,7 @@ function getPresignedUrl(apiKey, localFile) {
       .get(reqOptions, (response) => {
         response.on("data", (d) => {
           let data = JSON.parse(d);
-          if (data.error == false) {
+          if (data.error === false) {
             // Return presigned url we received
             resolve([data.presignedUrl, data.url]);
           } else {
@@ -135,7 +135,7 @@ function convertPdfToXls(
         response.setEncoding("utf8");
         // Parse JSON response
         let data = JSON.parse(d);
-        if (data.error == false) {
+        if (data.error === false) {
           // Download XLS file
           var file = fs.createWriteStream(destinationFile);
           https.get(data.url, (response2) => {
