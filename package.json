@@ -15,6 +15,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
+    "request": "^2.88.2",
     "styled-components": "^5.3.6",
     "web-vitals": "^2.1.4"
   },
@@ -26,6 +27,13 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
+  "keywords": [
+    "pdf.co",
+    "web",
+    "api",
+    "bytescout",
+    "api"
+  ],
   "eslintConfig": {
     "extends": [
       "react-app",
