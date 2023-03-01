@@ -10,7 +10,8 @@ var request = require("request");
 
 // The authentication key (API Key).
 // Get your own by registering at https://app.pdf.co
-const API_KEY = process.env.API_KEY; // "***********************************";
+const API_KEY =
+  "sumbetov@bimandco.com_6837cb9f0ab5360d87754398c6350cedef7001b76d6b1a8d53b0d5f19495b6d3b29b21fa"; // "***********************************";
 
 // Source PDF file
 const SourceFile = "./sample.pdf";
@@ -18,23 +19,15 @@ const SourceFile = "./sample.pdf";
 const Pages = "";
 // PDF document password. Leave empty for unprotected documents.
 const Password = "";
-// Destination XLS file name
-const DestinationFile = "./result.xls";
 
 // 1. RETRIEVE PRESIGNED URL TO UPLOAD FILE.
 getPresignedUrl(API_KEY, SourceFile)
-  .then(([uploadUrl, uploadedFileUrl]) => {
+  .then(([uploadUrl, uploadedFileUrl]: any) => {
     // 2. UPLOAD THE FILE TO CLOUD.
     uploadFile(API_KEY, SourceFile, uploadUrl)
       .then(() => {
-        // 3. CONVERT UPLOADED PDF FILE TO XLS
-        convertPdfToXls(
-          API_KEY,
-          uploadedFileUrl,
-          Password,
-          Pages,
-          DestinationFile
-        );
+        // 3. CONVERT UPLOADED PDF FILE TO JPEG
+        convertPdfToJpeg(API_KEY, uploadedFileUrl, Password, Pages);
       })
       .catch((e) => {
         console.log(e);
@@ -48,12 +41,12 @@ function getPresignedUrl(apiKey, localFile) {
   return new Promise((resolve) => {
     // Prepare request to `Get Presigned URL` API endpoint
     let queryPath = `/v1/file/upload/get-presigned-url?contenttype=application/octet-stream&name=${path.basename(
-      SourceFile
+      SourceFile || localFile
     )}`;
     let reqOptions = {
       host: "api.pdf.co",
       path: encodeURI(queryPath),
-      headers: { "x-api-key": API_KEY },
+      headers: { "x-api-key": API_KEY || apiKey },
     };
     // Send request
     https
@@ -77,7 +70,8 @@ function getPresignedUrl(apiKey, localFile) {
 }
 
 function uploadFile(apiKey, localFile, uploadUrl) {
-  return new Promise((resolve) => {
+  console.log("uploadUrl :", uploadUrl);
+  return new Promise<void>((resolve) => {
     fs.readFile(SourceFile, (err, data) => {
       request(
         {
@@ -100,19 +94,12 @@ function uploadFile(apiKey, localFile, uploadUrl) {
   });
 }
 
-function convertPdfToXls(
-  apiKey,
-  uploadedFileUrl,
-  password,
-  pages,
-  destinationFile
-) {
-  // Prepare request to `PDF To XLS` API endpoint
-  var queryPath = `/v1/pdf/convert/to/xls`;
+function convertPdfToJpeg(apiKey, uploadedFileUrl, password, pages) {
+  // Prepare URL for `PDF To JPEG` API call
+  var queryPath = `/v1/pdf/convert/to/jpg`;
 
   // JSON payload for api request
   var jsonPayload = JSON.stringify({
-    name: path.basename(destinationFile),
     password: password,
     pages: pages,
     url: uploadedFileUrl,
@@ -136,24 +123,29 @@ function convertPdfToXls(
         // Parse JSON response
         let data = JSON.parse(d);
         if (data.error === false) {
-          // Download XLS file
-          var file = fs.createWriteStream(destinationFile);
-          https.get(data.url, (response2) => {
-            response2.pipe(file).on("close", () => {
-              console.log(
-                `Generated XLS file saved as "${destinationFile}" file.`
-              );
+          // Download generated JPEG files
+          var page = 1;
+          data.urls.forEach((url) => {
+            var localFileName = `./page${page}.jpg`;
+            var file = fs.createWriteStream(localFileName);
+            https.get(url, (response2) => {
+              response2.pipe(file).on("close", () => {
+                console.log(
+                  `Generated JPEG file saved as "${localFileName}" file.`
+                );
+              });
             });
-          });
+            page++;
+          }, this);
         } else {
           // Service reported error
-          console.log("readBarcodes(): " + data.message);
+          console.log("convertPdfToJpeg(): " + data.message);
         }
       });
     })
     .on("error", (e) => {
       // Request error
-      console.log("readBarcodes(): " + e);
+      console.log("convertPdfToJpeg(): " + e);
     });
 
   // Write request data
